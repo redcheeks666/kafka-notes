@@ -1,0 +1,5 @@
+#启动SeimiCrawler
+seimi:
+  crawler:
+    enabled: true
+    names: basic

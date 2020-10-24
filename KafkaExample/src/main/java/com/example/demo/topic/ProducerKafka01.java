@@ -11,7 +11,7 @@ import java.util.concurrent.Future;
 
 public class ProducerKafka01 {
     public static final String brokerList="ha01:9092,ha02:9092,ha03:9092";
-    public static final String topic="topic-demo";
+    public static final String topic="a-topic";
 
     public static Properties initProps(){
         Properties properties = new Properties();
@@ -30,15 +30,14 @@ public class ProducerKafka01 {
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
         //消息实例
 
-        ProducerRecord<String,String > record1 = new ProducerRecord<>(topic,"num01","123");
-//        ProducerRecord<String, Company> record1 = new ProducerRecord<>(topic,new Company("1","zs","bj"));
-        try {
-            producer.send(record1).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        ProducerRecord<String,String > record = new ProducerRecord<>(topic,0,"DemoKey","DemoValue");
+
+        for (int i = 0; i <= 1000; i++) {
+            producer.send(record);
         }
+
+
+
 //        producer.send(record1, new Callback() {
 //            @Override
 //            public void onCompletion(RecordMetadata metadata, Exception exception) {
