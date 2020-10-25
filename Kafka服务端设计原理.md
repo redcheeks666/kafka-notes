@@ -447,15 +447,15 @@ public  class TaskEntry extends Task {
 
 #### 时间轮处理逻辑:
 
- 		假设一个时间轮tickMs为1ms,且wheelSize等于20。那么，该时间轮的总时间跨度为1*20，
+假设一个时间轮tickMs为1ms,且wheelSize等于20。那么，该时间轮的总时间跨度为1*20，20ms。初始情况下当
 
-20ms。初始情况下,当前时间为currentTime(表盘指针)位置为0,此时有一个2ms的定时任务。由于桶
+前时间为currentTime(表盘指针)位置为0,此时有一个2ms的定时任务。由于桶内时间间隔为左闭右开区间,所以会
 
-内时间间隔为左闭右开区间,所以会存放在第三个桶内,随着时间推移,2ms后,currentTime到达第三个
+存放在第三个桶内,随着时间推移,2ms后,currentTime到达第三个桶,此时需要把第三个桶对应的TimeTaskList中的
 
-桶,此时需要把第三个桶对应的TimeTaskList中的任务进行相应的到期操作,并清空TimeTaskList,以供下
+任务进行相应的到期操作,并清空TimeTaskList,以供下一回合使用。此时,如果再次进来一个8ms的务,Timingwheel
 
-一回合使用。此时,如果再次进来一个8ms的任务,Timingwheel会把它插入在第11个桶内。
+会把它插入在第11个桶内。
 
 > TimingWheel.scala源码:
 
@@ -542,7 +542,7 @@ private[timer] class TimingWheel(tickMs: Long, wheelSize: Int, startMs: Long, ta
 
 **currentTime**:表盘指针,时间轮当前所处时间。
 
- 		**当时间轮进入一个大于当前时间轮总跨度的定时任务，Kafka提出了层级时间轮的概念。高级时间轮的桶个数与低级时间轮一致，高级时间轮的桶间隔为低级时间轮的总跨度。如：**
+**当时间轮进入一个大于当前时间轮总跨度的定时任务，Kafka提出了层级时间轮的概念。高级时间轮的桶个数与低级时间轮一致，高级时间轮的桶间隔为低级时间轮的总跨度。如：**
 
 **1级时间轮**
 
@@ -570,23 +570,23 @@ private[timer] class TimingWheel(tickMs: Long, wheelSize: Int, startMs: Long, ta
 
 **插入**
 
- 		当currentTime指针当前时间为0时，插进来1个10Ms的定时任务，即插入1级时间轮的第十个桶，此时，又进来一个350m的定时任务，1级时间轮总跨度无法满足，即创建2级时间轮，2级时间轮每个桶间隔为20，遂，插入第18个桶，当此时进来的任务为500时，2级时间轮的总时间跨度也无法满足，以此类推，创建3级时间轮，插入3级时间轮第2个桶。
+当currentTime指针当前时间为0时，插进来1个10Ms的定时任务，即插入1级时间轮的第十个桶，此时，又进来一个350m的定时任务，1级时间轮总跨度无法满足，即创建2级时间轮，2级时间轮每个桶间隔为20，遂，插入第18个桶，当此时进来的任务为500时，2级时间轮的总时间跨度也无法满足，以此类推，创建3级时间轮，插入3级时间轮第2个桶。
 
 **执行**
 
- 		随着时间过去，以450m，三级时间轮为例，此时任务处在三级时间轮的第2个桶内，当currenTime指向该桶时，在[400,800)范围内的TimeTaskList中的任务会被提交到二级时间轮，如定时为500ms的在三级时间轮到期时，剩余50ms提交二级时间轮的第3个桶内，二级时间轮该桶过期时，剩余的10ms会被提交到1级时间轮中，10ms后，一级时间轮该桶到期，触发任务执行。
+随着时间过去，以450m，三级时间轮为例，此时任务处在三级时间轮的第2个桶内，当currenTime指向该桶时，在[400,800)范围内的TimeTaskList中的任务会被提交到二级时间轮，如定时为500ms的在三级时间轮到期时，剩余50ms提交二级时间轮的第3个桶内，二级时间轮该桶过期时，剩余的10ms会被提交到1级时间轮中，10ms后，一级时间轮该桶到期，触发任务执行。
 
 **kafka的时间轮，时间推进又是怎么做的呢？**
 
- 		kafka借助了JDK中DelayQueue来协助推进，kafka会把存有定时任务的TimerTaskList都加入到DelayQueue中，根据TimerTaskList对应的超时时间expiration来排序，最短的超时时间排在队头，kafka通过一个名为ExpiredOperationReaper的线程来获取DelayQueue中已经超时的任务列表。然后，根据过期时间expiration进行推进时间轮，获取到任务之后，对任务进行操作，直接执行，或者降级时间轮。
+kafka借助了JDK中DelayQueue来协助推进，kafka会把存有定时任务的TimerTaskList都加入到DelayQueue中，根据TimerTaskList对应的超时时间expiration来排序，最短的超时时间排在队头，kafka通过一个名为ExpiredOperationReaper的线程来获取DelayQueue中已经超时的任务列表。然后，根据过期时间expiration进行推进时间轮，获取到任务之后，对任务进行操作，直接执行，或者降级时间轮。
 
 **那么问题来了，既然定时任务最终还是存放在JDK中的DelayQueue队列中，那为何还需要时间轮的算法。kafka此举是否是脱裤子放屁的行为？**
 
- 		答案是否定的。DelayQueue插入和删除的平均时间复杂度为O(nlogn),无法满足高性能的kafka，而时间轮算法，使用TimerTaskList双向环形链表，可以把插入删除的时间复杂度降为O(1)，属于将定时任务先进行分组，然后进行插入DelayQueue，大大提高了性能。而最终使用DelayQueue来存储，并根据过期时间来推进时间轮。是因为，当我们取出对应任务时，我们便可以精准一次推进对应的世界轮指针。比如，如果我们使用每秒定时推进一次，那么一个100ms的任务，我们要无理由的浪费前99次的推进资源，而kafka这种方式，便可一次精准推进到100的时间刻度。不得不说，DelayQueue与时间轮的结合堪称完美操作。
+答案是否定的。DelayQueue插入和删除的平均时间复杂度为O(nlogn),无法满足高性能的kafka，而时间轮算法，使用TimerTaskList双向环形链表，可以把插入删除的时间复杂度降为O(1)，属于将定时任务先进行分组，然后进行插入DelayQueue，大大提高了性能。而最终使用DelayQueue来存储，并根据过期时间来推进时间轮。是因为，当我们取出对应任务时，我们便可以精准一次推进对应的世界轮指针。比如，如果我们使用每秒定时推进一次，那么一个100ms的任务，我们要无理由的浪费前99次的推进资源，而kafka这种方式，便可一次精准推进到100的时间刻度。不得不说，DelayQueue与时间轮的结合堪称完美操作。
 
 ## 服务端之延时操作
 
- 		kafka所有的延时任务底层都是通过时间轮实现的，对于延时操作，kafka对延时操作进行了封装-DelayedOperation，还提供了一个名为DelayedOperationPurgatory的类对延时操作DelayedOperation进行管理。DelayedOperationPurgatory字面意思为延时操作炼狱，延时操作的添加，便进入到DelayedOperationPurgatory进行洗涤，等待延时任务过期，触发，升入天堂。
+kafka所有的延时任务底层都是通过时间轮实现的，对于延时操作，kafka对延时操作进行了封装DelayedOperation，还提供了一个名为DelayedOperationPurgatory的类对延时操作DelayedOperation进行管理。DelayedOperationPurgatory字面意思为延时操作炼狱，延时操作的添加，便进入到DelayedOperationPurgatory进行洗涤，等待延时任务过期，触发，升入天堂。
 
 我们可以简单分析一下这两个组件：
 
@@ -677,7 +677,7 @@ private[server] val lock: Lock = lockOpt.getOrElse(new ReentrantLock)
 
 #### DelayedOperationPurgatory
 
- 		DelayedOperationPurgatory类对延时操作的抽象类DelayedOperation进行管理。延时操作被创建后会被放入DelayedOperationPurgatory中，Purgatory一词译为 ’ 炼狱 ‘，此处有延时任务在炼狱中洗涤之意。
+DelayedOperationPurgatory类对延时操作的抽象类DelayedOperation进行管理。延时操作被创建后会被放入DelayedOperationPurgatory中，Purgatory一词译为 ’ 炼狱 ‘，此处有延时任务在炼狱中洗涤之意。
 
 > DelayedOprationPurgatory的半生对象
 
@@ -983,7 +983,7 @@ override def onComplete() {
 
 #### 延时操作应用之延时拉取
 
-?		当follower副本向服务端发起请求，此时follower已经同步到了Leader的最新消息位置，重复的空拉取浪费资
+当follower副本向服务端发起请求，此时follower已经同步到了Leader的最新消息位置，重复的空拉取浪费资
 
 源，所以，kafka在拉取不到消息最小值fetch.min.bytes的时候，会进行创建延时拉取任务。延时拉取的流程与延
 
