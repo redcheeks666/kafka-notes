@@ -69,11 +69,11 @@
 
 **1级时间轮：**
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\Kafka一级时间轮.jpg)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/Kafka一级时间轮.jpg)
 
 **1-3级时间轮：**
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\Kafka三级时间轮.jpg)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/Kafka三级时间轮.jpg)
 
 #### 简易时间轮
 
