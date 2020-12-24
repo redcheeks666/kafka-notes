@@ -61,7 +61,7 @@
 
 > topic-a-N 文件夹内
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\log内部文件结构.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/log内部文件结构.png)
 
 ​		如上图，一个.index文件，一个.timeindex文件，一个.log文件组成一个LogSegment。kafka是顺序写入的，所以每次新消息只写入最后一个logSegment,当最后一个LogSegment满足条件时，创建新的LogSegment来让新消息写入。
 
@@ -84,7 +84,7 @@
 
 (Message Set)
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\kafka消息格式-V0版本.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/kafka消息格式-V0版本.png)
 
 > 图片摘自博客
 
@@ -102,7 +102,7 @@
 
 (Message Set)
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\kafka消息格式-V1格式.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/kafka消息格式-V1格式.png)
 
 > 图片摘自博客
 
@@ -115,7 +115,7 @@ magic为1,表示V1版本,attributes 低三位与V0版本一致,表示压缩类�
 
 (Record Batch)
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\kafka消息格式-V2格式.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/kafka消息格式-V2格式.png)
 
 > 图片摘自博客		
 
@@ -702,7 +702,7 @@ log.index.interval.bytes#默认值为10MB。
 
 #### 缓存磁盘I/O
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\磁盘IO分层图.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/磁盘IO分层图.png)
 
 > 图片摘自知乎
 
@@ -742,7 +742,7 @@ SPDK(Storage performance development kit) 由Intel发起,用于加速使用NVME�
 
 如从某个磁盘读取文件：
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\缓存IO流程图.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/缓存IO流程图.png)
 
 1. DMA把磁盘文件拷贝到内核缓冲区。
 2. CPU把数据拷贝到用户态缓冲区。
@@ -792,14 +792,14 @@ SPDK(Storage performance development kit) 由Intel发起,用于加速使用NVME�
 
 **mmap**
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\mmapIO流程图.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/mmapIO流程图.png)
 
 应用程序调用mmap，磁盘中的数据通过DMA控制器拷贝到内核缓冲区，操作系统会将内核缓冲区与应用程序共享，这样就不用往用户空间拷贝。由内核缓冲区拷贝到Socket缓冲区。
 **缺点**：mmap在建立映射时必须指定映射区域，读写区域固定，不能以增长方式写。
 
 **sendfile**
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\sendfile流程图.png)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/sendfile流程图.png)
 
 sendfile系统调用在Linux 2.1被引入，目的简化通过网络在两个通道间的数据传输。sendfile是只发生在内核态的数据传输接口，没有用户态的参与，减少上下文切换。
 在Linux2.4内核做了改进，DMA把数据拷贝到内核缓冲区后，向Socket缓冲区中追加当前数据在内核缓冲区的位置和偏移量。然后根据Socket中的位置和偏移量，
@@ -857,7 +857,7 @@ Noop算法全称No Operation ,实现了最简单的FIFO的队列，所有请求�
 
 磁盘，内存I/O效率对比：
 
-![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\磁盘写入速度对比.jpg)
+![](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/磁盘写入速度对比.jpg)
 
 > 图片摘自博客
 

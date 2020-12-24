@@ -129,7 +129,7 @@ Kafka的更新HW基本流程至此结束，但HW的更新存在空档期，即�
 
 数据不一致场景：
 
-![Follower向Leader同步数据二](C:\Users\asus\Desktop\副本HW变更\Follower向Leader同步数据五.jpg)
+![Follower向Leader同步数据二](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/Follower向Leader同步数据五.jpg)
 
 依旧时之前的topic，单分区，双副本，min.insync.replicas=1,Leader副本A和Follower副本B，某一时刻，LeaderA中收到了两条消息m1,m2，LEO为2，FollowerB中同步了其中一条m1，LEO为1，分区HW为2.FollowerB的HW为1，假如此时AB两副本同时宕机，FollowerB第一个恢复成为LeaderB，之后写入消息m3(此时LeaderB上存在消息m1,m3),并将分区HW更新为2。此时之前的LeaderA副本恢复成为FollowerA,在进行日志截断时，FollowerA本身的HW为2，A上面也只有两条m1,m2消息，所以无需调整。如此，A副本中消息为m1,m2，B副本中消息m1,m3,数据不一致。
 

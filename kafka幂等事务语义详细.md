@@ -381,7 +381,7 @@ private Record nextFetchedRecord() {
 
 #### kafka事务整体流程
 
-![Kafka 事务流程](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\Kafka 事务流程.png)
+![Kafka事务流程](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/Kafka事务流程.png)
 
 
 

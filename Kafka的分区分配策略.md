@@ -26,7 +26,7 @@ Kafka对用户提供三个分区的方案，
 
 > StickyAssignor.java
 
-![分区实现关系图](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\分区实现关系图.png)
+![分区实现关系图](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/分区实现关系图.png)
 
 ### AbstractPartitionAssignor
 
