@@ -1,251 +1,137 @@
+# 三台阿里云服务器搭建zookeeper,Kafka集群
 
+## 准备
 
-# kafka源码环境搭建 And Run
+1. **三台云服务器,zookeeper Linux安装包，kafka Linux安装包**
+2. **安装jdk，配置java环境**
+3. **配置三台服务器的SSH免密登录**
+4. **关闭防火墙**
+5. **配置主机名映射 /etc/hosts**
+6. **配置阿里云安全组ip，添加ip信任端口, ip:0.0.0.0/0 端口1/65535**
 
-操作系统:Windows系统
+## 安装配置zookeeper
 
-一台已经启动好的zookeeper服务
+> ```shell
+> mkdir /home/zookeeper
+> ```
 
-**jdk环境**
+> ```shell
+> tar  -zxvf  zookeeper-3.4.6.jar -C  /home/zookeeper #解压
+> ```
 
-配置环境变量
+> ```shell
+> cd	/home/zookeeper/zookeeper-3.4.6/
+> ```
 
-```shell
-C:\Users\EDZ>java -version
-java version "1.8.0_131"
-Java(TM) SE Runtime Environment (build 1.8.0_131-b11)
-Java HotSpot(TM) 64-Bit Server VM (build 25.131-b11, mixed mode)
+> ```shell
+> cp	/conf/zoo_sample.cfg 	zoo.cfg
+> ```
+
+> ```shell
+> mkdir	/home/zookeeper/zkdata	#并且在该文件下新建文件名为myid的文件，填入此节点编号，如0/1/2
+> ```
+
+> ```shell
+> mkdir	/home/zookeeper/zklog
+> ```
+
+> ```shell
+> vi	zoo.cfg
+> ```
+
+```java
+# The number of milliseconds of each tick
+tickTime=2000
+# The number of ticks that the initial 
+# synchronization phase can take
+initLimit=10
+# The number of ticks that can pass between 
+# sending a request and getting an acknowledgement
+syncLimit=5
+# the directory where the snapshot is stored.
+# do not use /tmp for storage, /tmp here is just 
+# example sakes.
+dataDir=/home/zookeeper/zkdata
+dataLogDir=/home/zookeeper/zklog
+# the port at which the clients will connect
+clientPort=2181
+# the maximum number of client connections.
+# increase this if you need to handle more clients
+#maxClientCnxns=60
+#
+# Be sure to read the maintenance section of the 
+# administrator guide before turning on autopurge.
+#
+# http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance
+#
+# The number of snapshots to retain in dataDir
+#autopurge.snapRetainCount=3
+# Purge task interval in hours
+# Set to "0" to disable auto purge feature
+#autopurge.purgeInterval=1
+server.0=zk01:2888:3888	
+server.1=zk02:2888:3888
+server.2=zk03:2888:3888
+
 ```
 
-**scala环境**
-
-配置环境变量
-
 ```shell
-C:\Users\EDZ>scala -version
-Scala code runner version 2.11.12 -- Copyright 2002-2017, LAMP/EPFL
+server.num=ip:port01:port02 
+
+#num:与ip对应的myid编号保持一致
+
+#ip:节点ip，(在阿里的云服务器上，通过自己的公网ip，是不能监听自己本机的端口的。将本机的ip改为0.0.0.0，通过这个ip来监听本机的这两个端口。)
+#例如 本机节点 IP为zk01 配置为
+#server.0=0.0.0.0:2888:3888	
+#server.1=zk02:2888:3888
+#server.2=zk03:2888:3888
+#port01:节点通信端口
+
+#port02:Leader选举端口
+
 ```
 
-**Gradle(项目构建工具)**
+```shell
+三台节点[root@zkX zookeeper-3.4.6]# bin/zkServer.sh start   (zk启动)
+	   [root@zkX zookeeper-3.4.6]# bin/zkServer.sh status (zk节点状态)
+	   [root@zkX zookeeper-3.4.6]# bin/zkServer.sh restart  (zk节点重启)
 
-> 下载地址 https://gradle.org/releases/
+```
+
+## 安装配置Kafka
+
+> ```shell
+> mkdir /home/kafka
 >
-> 配置环境变量
+> ```
+
+> ```shell
+> tar  -zxvf  kafka_2.12-2.3.1.tgz -C  /home/zookeeper #解压 
+>
+> ```
+
+> ```shell
+> cd  /home/kafka/kafka_2.12-2.3.1
+>
+> ```
+
+> ```shell
+> vi	/config/server.properties
+>
+> ```
 
 ```shell
-C:\Users\EDZ>gradle -v
+#zookeeper的集群地址
+zookeeper.connect=zk01:2181,zk02:2181,zk03:2181
+#broker.id 配置brokerid 必须保证每台节点唯一
+broker.id=0/1/2
 
-------------------------------------------------------------
-Gradle 4.9
-------------------------------------------------------------
-
-Build time:   2018-07-16 08:14:03 UTC
-Revision:     efcf8c1cf533b03c70f394f270f46a174c738efc
-
-Kotlin DSL:   0.18.4
-Kotlin:       1.2.41
-Groovy:       2.4.12
-Ant:          Apache Ant(TM) version 1.9.11 compiled on March 23 2018
-JVM:          1.8.0_131 (Oracle Corporation 25.131-b11)
-OS:           Windows 7 6.1 amd64
 ```
 
-**kafka源码包**
-
-> 下载地址 http://kafka.apache.org/downloads
-
-kafka-2.3.1-src.tgz
-
-解压
-
-进入根目录 打开build.gradle文件
-
-修改两个仓库地址属性 (url替换为阿里镜像为了下载速度）
-
-```groovy
-allprojects {
-
-  repositories {
-	maven {
-      url "http://maven.aliyun.com/nexus/content/groups/public/"
-    }
-	maven {
-      url "https://plugins.gradle.org/m2/"
-    }
-	mavenCentral()
-    google()
-    jcenter()
-  }
-   ...
-}
- buildscript {
-  repositories {
-	maven {
-      url "http://maven.aliyun.com/nexus/content/groups/public/"
-    }
-	maven {
-      url "https://plugins.gradle.org/m2/"
-    }
-	mavenCentral()
-    google()
-    jcenter()
-  
-   ...
- }
-```
-
-修改gradle.properties文件
-
-```properties
-version=2.3.1
-#修改此处，此处是scala版本 与上面安装的scala版本一致
-scalaVersion=2.11.12
-task=build
-org.gradle.jvmargs=-Xmx1024m -Xss2m
-```
-
-**gradle构建kafka**
-
-kafka-2.3.1-src目录 cmd 
-
-gradle idea 走你
-
-```shell
-gradle idea
-```
-
-出了个BUG
-
-```shell
-> Could not resolve all artifacts for configuration ':classpath'.
-   > Could not find com.diffplug.spotless:spotless-plugin-gradle:3.23.0.
-```
-
-好像是在阿里云的仓库没找到对应的插件
-
-然后在build.gradle文件中 两个仓库地址下面添加了
-
-```groovy
-maven { url "https://plugins.gradle.org/m2/"}
-```
-
-再次构建
-
-```shell
-BUILD SUCCESSFUL in 6m 36s
-31 actionable tasks: 31 executed
-```
-
-**导入IDEA并运行**
-
-使用IDEA 打开build.gradle文件，选择Open As Project, 选中"Create Directories for empty contents roots Automatically"
-
-**idea安装scala插件**
-
-idea-Plugins-scala 下载安装重启
-
-**添加log4j.properties文件**
-
-将config目录下的log4j.properties文件拷贝到core/src/main/scala目录下
-
-**配置server.properties文件**
-
-```properties
-zookeeper.connect=112.126.***.***:2181
-log.dirs=D:\\Download\\log
-```
-
-**配置启动Configurations**
-
-![idea源码启动配置](C:\Users\EDZ\Desktop\新建文件夹\picture\idea源码启动配置.png)
+> ```shell
+> bin/kafka-server-start.sh config/server.properties #启动kafka
+>
+> ```
 
 
 
-启动~
-
-报错 ! 好像少包~
-
-```shell
-SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-SLF4J: Defaulting to no-operation (NOP) logger implementation
-SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
-```
-
-解决方案：添加依赖
-
-找到项目中的\kafka-2.3.1-src\gradle\dependencies.gradle
-
-在下面位置添加
-
-```groovy
-versions += [
-        ...
-        log4j_bugfix: "1.7.30"
-]
-libs += [
-        ... 
-        log4jBugFix:"org.slf4j:slf4j-log4j12:$versions.log4j_bugfix"
-]
-```
-
-打开\kafka-2.3.1-src\build.gradle
-
-```groovy
-project(':core') {
-  println "Building project 'core' with Scala version ${versions.scala}"
-
-  apply plugin: 'scala'
-  apply plugin: "org.scoverage"
-  archivesBaseName = "kafka_${versions.baseScala}"
-
-  dependencies {
-    compile project(':clients')
-    compile libs.jacksonDatabind
-    compile libs.jacksonModuleScala
-    compile libs.jacksonDataformatCsv
-    compile libs.jacksonJDK8Datatypes
-    compile libs.joptSimple
-    compile libs.metrics
-    compile libs.scalaLibrary
-    // only needed transitively, but set it explicitly to ensure it has the same version as scala-library
-    compile libs.scalaReflect
-    compile libs.scalaLogging
-    compile libs.slf4jApi
-    compile(libs.zkclient) {
-      exclude module: 'zookeeper'
-    }
-    compile(libs.zookeeper) {
-      exclude module: 'slf4j-log4j12'
-      exclude module: 'log4j'
-      exclude module: 'netty'
-    }
-    //当前位置新增如下配置
-	compile(libs.log4jBugFix)
-      
-      ...
-}
-```
-
-再启动~
-
-再次报错~
-
-```shell
-No appenders could be found for logger (kafka.utils.Log4jControllerRegistration$)
-```
-
-在\kafka-2.3.1-src\core\src\main\目录下新建resources文件夹，把log4j.properties挪入。刷新Gradle ,再次启动！
-
-```shell
-[2020-08-10 15:29:54,487] INFO [TransactionCoordinator id=6] Starting up. (kafka.coordinator.transaction.TransactionCoordinator)
-[2020-08-10 15:29:54,492] INFO [Transaction Marker Channel Manager 6]: Starting (kafka.coordinator.transaction.TransactionMarkerChannelManager)
-[2020-08-10 15:29:54,492] INFO [TransactionCoordinator id=6] Startup complete. (kafka.coordinator.transaction.TransactionCoordinator)
-[2020-08-10 15:29:54,560] INFO [/config/changes-event-process-thread]: Starting (kafka.common.ZkNodeChangeNotificationListener$ChangeEventProcessThread)
-[2020-08-10 15:29:54,676] INFO [SocketServer brokerId=6] Started data-plane processors for 1 acceptors (kafka.network.SocketServer)
-[2020-08-10 15:29:54,683] INFO Kafka version: 2.3.1 (org.apache.kafka.common.utils.AppInfoParser)
-[2020-08-10 15:29:54,683] INFO Kafka commitId: unknown (org.apache.kafka.common.utils.AppInfoParser)
-[2020-08-10 15:29:54,684] INFO Kafka startTimeMs: 1597044594679 (org.apache.kafka.common.utils.AppInfoParser)
-[2020-08-10 15:29:54,686] INFO [KafkaServer id=6] started (kafka.server.KafkaServer)
-```
-
-成功！
