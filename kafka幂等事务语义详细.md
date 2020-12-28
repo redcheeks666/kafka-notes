@@ -50,17 +50,7 @@ kafka的语义是直接了当的。当发布消息时，我们有一个消息被
 
 ## 幂等
 
-幂等，即多次调用接口产生的结果与调用一次接口的结果一致。避免了生产者在进行重试发送时产生的消息重复。
-
-在0.11.0.0版本之前，kafka生产者在未收到已提交的响应时，除了重新发送消息别无选择。也就是在0.11.0.0版本
-
-之前，这提供了至少一次(At least once)的消息传递语义。从0.11.0.0版本开始，KafkaProducer提供了幂等的发
-
-送机制，该机制保证了重发不会导致日志的重复。为此，Broker在初始化Producer时，会给其分配一个
-
-ProducerId，随每个消息发送的，还有一个sequence number(序列号)，这样，使用
-
-PID+Message+SequenceNumber对每个消息的重复数据进行删除，达到幂等。
+幂等，即多次调用接口产生的结果与调用一次接口的结果一致。避免了生产者在进行重试发送时产生的消息重复。在0.11.0.0版本之前，kafka生产者在未收到已提交的响应时，除了重新发送消息别无选择。也就是在0.11.0.0版本之前，这提供了至少一次(At least once)的消息传递语义。从0.11.0.0版本开始，KafkaProducer提供了幂等的发送机制，该机制保证了重发不会导致日志的重复。为此，Broker在初始化Producer时，会给其分配一个ProducerId，随每个消息发送的，还有一个sequence number(序列号)，这样，使用PID+Message+SequenceNumber对每个消息的重复数据进行删除，达到幂等。
 
 ### 幂等的限制
 
@@ -200,11 +190,7 @@ def generateProducerId(): Long = {
 
 **sequenceNumber校验规则**
 
-sequenceNumber随消息一起发送，Broker端在内存中保存了此序列的当前值，当接收到新发送的消息，如果是
-
-同一分区的消息中序列号比Broker中保存的序列号刚好大1，则接收，否则丢弃。这样，即实现了避免消息重复提
-
-交，但这只能保证单个分区内消息幂等，不能保证不同分区的消息幂等。
+sequenceNumber随消息一起发送，Broker端在内存中保存了此序列的当前值，当接收到新发送的消息，如果是同一分区的消息中序列号比Broker中保存的序列号刚好大1，则接收，否则丢弃。这样，即实现了避免消息重复提交，但这只能保证单个分区内消息幂等，不能保证不同分区的消息幂等。
 
 
 
@@ -266,21 +252,11 @@ sequenceNumber随消息一起发送，Broker端在内存中保存了此序列的
 
 #### 事务流程中数据安置问题
 
-对于处于事务中的数据，如果存入缓存，待分区Leader收到commit或者abort的EndTransactionMarker消息时再
-
-做处理,肯定是不理想的,如果事务流程较长，数据量大，内存无法支撑，对此，kafka的做法是直接将数据存入磁
-
-盘。
+对于处于事务中的数据，如果存入缓存，待分区Leader收到commit或者abort的EndTransactionMarker消息时再做处理,肯定是不理想的,如果事务流程较长，数据量大，内存无法支撑，对此，kafka的做法是直接将数据存入磁盘。
 
 ##### Server服务端
 
-在消息结构中，有一个attributes的字段，其中，第5位标识当前消息是否是事务消息，如果是，则为1，否则
-
-为0。第6位标识当前消息是否为控制消息(即 EndTransactionMarker消息)，如果是则为1，否则为0。在事务结
-
-束时，TransactionCoordinatior会向各个分区Leader发送请求，对应分区收到请求写入控制消息。以此标识事务
-
-的结束。
+在消息结构中，有一个attributes的字段，其中，第5位标识当前消息是否是事务消息，如果是，则为1，否则为0。第6位标识当前消息是否为控制消息(即 EndTransactionMarker消息)，如果是则为1，否则为0。在事务结束时，TransactionCoordinatior会向各个分区Leader发送请求，对应分区收到请求写入控制消息。以此标识事务的结束。
 
 Control Batch只有一条消息，Key中保存控制类型，0代表abort,1代表commit。value保存
 
@@ -288,13 +264,7 @@ TransacationCoordinator的版本。
 
 ##### Consumer客户端
 
-Kafka提出了一个LSO的概念，即last stable offset，对于分区而言，offset小于LSO的消息都为稳定的消息，即事
-
-务状态已经确定的消息，要么提交过的，要么回滚过的。Broker对于read_committed的Consumer，只提供
-
-offset小于LSO的消息。
-
-在server返回给Consumer数据时，除了Batch,还会返回一个abortedTransactions，abortedTransactions是一个队列，其中保存的是事务的每个PID对应事务的起始偏移量，即`<PID,firstOffset>`。
+Kafka提出了一个LSO的概念，即last stable offset，对于分区而言，offset小于LSO的消息都为稳定的消息，即事务状态已经确定的消息，要么提交过的，要么回滚过的。Broker对于read_committed的Consumer，只提供offset小于LSO的消息。在server返回给Consumer数据时，除了Batch,还会返回一个abortedTransactions，abortedTransactions是一个队列，其中保存的是事务的每个PID对应事务的起始偏移量，即`<PID,firstOffset>`。
 
 每次Consumer拉取到数据，会进行以下一个操作：
 
@@ -475,3 +445,5 @@ Commit或Abort，TransactionCoordinator在收到请求后会做以下操作。
 
 
 至此，事务整体流程结束。
+
+通俗一点的来看kafka事务就是,当kafka开启了事务,所有消息都会正常落入磁盘,每个消息都会有一个标识，来标识是否是事务消息,在客户端进行了提交了事务的操作后,会再次提交一个控制消息(回滚或提交),标识当前事务的结束。消费者拉取时,只返回LSO之前的消息,LSO之前的消息都是已经确定的事务消息。消费者进行筛选,过滤控制消息和回滚消息,之后返回给客户端。
