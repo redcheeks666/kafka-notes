@@ -45,7 +45,7 @@
 
 ### kafka的LOG文件存储结构
 
-![kafka的log目录架构](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture\kafka的log目录架构.png)
+![kafka的log目录架构](https://zllcfy.oss-cn-beijing.aliyuncs.com/picture/kafka的log目录架构.png)
 
 
 
