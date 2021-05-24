@@ -129,7 +129,7 @@ broker.id=0/1/2
 ```
 
 > ```shell
-> bin/kafka-server-start.sh -deamon config/server.properties #启动kafka
+> bin/kafka-server-start.sh -daemon config/server.properties #启动kafka
 >
 > ```
 
